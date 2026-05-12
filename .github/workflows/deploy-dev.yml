@@ -1,0 +1,49 @@
+name: Deploy to cloudtype
+on:
+  push:
+    branches:
+      - dev
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Connect deploy key
+        uses: cloudtype-github-actions/connect@v1
+        with:
+          token: ${{ secrets.CLOUDTYPE_TOKEN }}
+          ghtoken: ${{ secrets.GHP_TOKEN }}
+      - name: Deploy
+        uses: cloudtype-github-actions/deploy@v1
+        with:
+          token: ${{ secrets.CLOUDTYPE_TOKEN }}
+          project: jkoogi.autoit/pdfrend
+          stage: main
+          yaml: |
+            name: pdfrend
+            app: node@20
+            options:
+              ports: "4000"
+              install: npm install
+              build: npm run build
+              start: npm start
+              env:
+                - name: NODE_ENV
+                  value: production
+                - name: ENVIRONMENT
+                  value: dev
+                - name: PORT
+                  value: "4000"
+                - name: DB_PASSWORD
+                  value: ""
+                - name: JWT_SECRET
+                  value: ""
+                - name: OAUTH_CLIENT_SECRET
+                  value: ""
+              buildenv: []
+            context:
+              git:
+                url: git@github.com:${{ github.repository }}.git
+                ref: ${{ github.ref }}
+              root: src/backend
