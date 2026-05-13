@@ -6,10 +6,10 @@ applications:
       git:
         url: https://github.com/jkoogit/PDFrend.git
         ref: dev
-      root: src/backend
+      root: apps/backend
     spec:
       runtime: nodejs-20
-      build: npm install && npm run build
+      build: pnpm install && pnpm run build
       start: npm start
       port: 4000
       env:
