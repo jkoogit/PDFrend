@@ -9,7 +9,7 @@ applications:
       root: .
     spec:
       runtime: nodejs-20
-      build: npx pnpm install && npx pnpm run backend:build
+      build: npx pnpm install --production=false && npx pnpm run backend:build
       start: npx pnpm --filter backend start
       port: 4000
       env:
