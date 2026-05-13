@@ -1,6 +1,6 @@
-export const devConfig = {
-  environment: 'development',
-  nodeEnv: 'development',
+export const localConfig = {
+  environment: 'local',
+  nodeEnv: 'local',
   logging: {
     level: 'debug',
   },
