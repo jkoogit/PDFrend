@@ -11,12 +11,12 @@
     - `users`: id(serial), email(varchar), name(varchar), createdAt, updatedAt
     - `documents`: id(serial), userId(integer, FK), title, content, fileUrl, status, createdAt, updatedAt
 - **설정 파일 수정**: `drizzle.config.ts`의 dialect를 `postgresql`로 변경.
-- **구조 정리**: `src/backend/src` 형태의 중복 구조를 루트 기준으로 통합하여 `src/` 하위로 정리.
+- **모노레포 구조 전환**: 향후 프론트엔드 확장 및 서비스 독립성을 고려하여 pnpm 워크스페이스 기반의 모노레포 구조로 전환. 백엔드 소스는 `apps/backend`로 이동.
 - **파일명 규칙 적용**: 식별 용이성을 위해 진입점 파일에 `index_` 접두어 적용 (`index_svr.ts`, `index_db.ts`, `index_sch.ts`).
 
 ## 3. 의사결정
 - **DB 선택**: PostgreSQL (Cloudtype 프리티어 서비스 활용).
-- **구조 최적화**: 유지보수 편의성을 위해 중복된 `src/backend` 폴더를 제거하고 루트 프로젝트 구조로 통합.
+- **구조 최적화**: 확장성을 고려하여 pnpm 워크스페이스 기반의 모노레포 구조를 채택하고, 백엔드와 프론트엔드를 `apps/` 하위에서 독립적으로 관리하도록 설계.
 
 ## 4. 향후 계획
 - `DATABASE_URL` 환경 변수를 통한 실제 DB 연결 테스트.
