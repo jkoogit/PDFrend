@@ -7,7 +7,7 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node dist/src/index_svr.js",
+    "start": "npm run build && node dist/src/index_svr.js",
     "build": "tsc",
     "lint": "eslint src",
     "dev": "ts-node-dev --respawn --transpile-only src/index_svr.ts"
