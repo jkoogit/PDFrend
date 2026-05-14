@@ -4,11 +4,71 @@ import { db } from '../../infrastructure/database/index_db';
 import { users, documents } from '../../infrastructure/database/schema/index_sch';
 import { eq, and } from 'drizzle-orm';
 
-const t = initTRPC.create();
+import { signAuthToken, hashPassword, verifyPassword, revokeAuthToken } from './auth_token';
+import type { Context } from './context';
+
+const t = initTRPC.context<Context>().create();
+
+const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
+  if (!ctx.user) {
+    throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Authentication required' });
+  }
+  return next({ ctx: { ...ctx, user: ctx.user } });
+});
 
 export const appRouter = t.router({
   healthCheck: t.procedure.query(() => {
     return { status: 'ok', message: 'PDFrend API is running' };
+  }),
+
+
+  signup: t.procedure
+    .input(z.object({
+      email: z.string().email(),
+      password: z.string().min(8),
+      name: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      try {
+        const [newUser] = await db.insert(users).values({
+          email: input.email,
+          name: input.name,
+          passwordHash: hashPassword(input.password),
+          provider: 'local',
+        }).returning();
+        if (!newUser) {
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to create user' });
+        }
+        const token = signAuthToken({ userId: newUser.id, email: newUser.email });
+        return { token, user: { id: newUser.id, email: newUser.email, name: newUser.name } };
+      } catch (error: any) {
+        if (error.code === '23505') {
+          throw new TRPCError({ code: 'CONFLICT', message: 'User with this email already exists' });
+        }
+        throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to signup' });
+      }
+    }),
+
+  login: t.procedure
+    .input(z.object({ email: z.string().email(), password: z.string().min(8) }))
+    .mutation(async ({ input }) => {
+      const [user] = await db.select().from(users).where(eq(users.email, input.email));
+      if (!user?.passwordHash || !verifyPassword(input.password, user.passwordHash)) {
+        throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Invalid credentials' });
+      }
+      const token = signAuthToken({ userId: user.id, email: user.email });
+      return { token, user: { id: user.id, email: user.email, name: user.name } };
+    }),
+
+  me: protectedProcedure.query(async ({ ctx }) => {
+    const [user] = await db.select().from(users).where(eq(users.id, ctx.user.userId));
+    if (!user) throw new TRPCError({ code: 'NOT_FOUND', message: 'User not found' });
+    return { id: user.id, email: user.email, name: user.name, provider: user.provider };
+  }),
+
+  logout: protectedProcedure.mutation(async ({ ctx }) => {
+    if (ctx.token) revokeAuthToken(ctx.token);
+    return { success: true };
   }),
 
   // User Procedures
@@ -90,16 +150,15 @@ export const appRouter = t.router({
     }),
 
   // Document Procedures
-  createDocument: t.procedure
+  createDocument: protectedProcedure
     .input(z.object({
-      userId: z.number(),
       title: z.string().min(1),
       content: z.string().optional(),
       fileUrl: z.string().url().optional(),
     }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const [newDoc] = await db.insert(documents).values({
-        userId: input.userId,
+        userId: ctx.user.userId,
         title: input.title,
         content: input.content,
         fileUrl: input.fileUrl,
@@ -107,18 +166,17 @@ export const appRouter = t.router({
       return newDoc;
     }),
 
-  listDocuments: t.procedure
-    .input(z.object({ userId: z.number() }))
-    .query(async ({ input }) => {
-      return await db.select().from(documents).where(eq(documents.userId, input.userId));
+  listDocuments: protectedProcedure
+    .query(async ({ ctx }) => {
+      return await db.select().from(documents).where(eq(documents.userId, ctx.user.userId));
     }),
 
-  getDocument: t.procedure
-    .input(z.object({ id: z.number(), userId: z.number() }))
-    .query(async ({ input }) => {
+  getDocument: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .query(async ({ input, ctx }) => {
       const [doc] = await db.select()
         .from(documents)
-        .where(and(eq(documents.id, input.id), eq(documents.userId, input.userId)));
+        .where(and(eq(documents.id, input.id), eq(documents.userId, ctx.user.userId)));
       
       if (!doc) {
         throw new TRPCError({
@@ -129,20 +187,19 @@ export const appRouter = t.router({
       return doc;
     }),
 
-  updateDocument: t.procedure
+  updateDocument: protectedProcedure
     .input(z.object({
       id: z.number(),
-      userId: z.number(),
       title: z.string().optional(),
       content: z.string().optional(),
       fileUrl: z.string().url().optional(),
       status: z.string().optional(),
     }))
-    .mutation(async ({ input }) => {
-      const { id, userId, ...updateData } = input;
+    .mutation(async ({ input, ctx }) => {
+      const { id, ...updateData } = input;
       const [updatedDoc] = await db.update(documents)
         .set({ ...updateData, updatedAt: new Date() })
-        .where(and(eq(documents.id, id), eq(documents.userId, userId)))
+        .where(and(eq(documents.id, id), eq(documents.userId, ctx.user.userId)))
         .returning();
       
       if (!updatedDoc) {
@@ -154,11 +211,11 @@ export const appRouter = t.router({
       return updatedDoc;
     }),
 
-  deleteDocument: t.procedure
-    .input(z.object({ id: z.number(), userId: z.number() }))
-    .mutation(async ({ input }) => {
+  deleteDocument: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input, ctx }) => {
       const [deletedDoc] = await db.delete(documents)
-        .where(and(eq(documents.id, input.id), eq(documents.userId, input.userId)))
+        .where(and(eq(documents.id, input.id), eq(documents.userId, ctx.user.userId)))
         .returning();
       
       if (!deletedDoc) {

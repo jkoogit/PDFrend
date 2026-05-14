@@ -4,6 +4,9 @@ export const users = pgTable('users', {
   id: serial('id').primaryKey(),
   email: varchar('email', { length: 255 }).notNull().unique(),
   name: varchar('name', { length: 255 }),
+  passwordHash: varchar('password_hash', { length: 255 }),
+  provider: varchar('provider', { length: 50 }).default('local'),
+  providerId: varchar('provider_id', { length: 255 }),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
 });
