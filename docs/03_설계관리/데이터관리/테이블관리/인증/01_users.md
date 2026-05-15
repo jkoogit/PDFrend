@@ -6,7 +6,7 @@
 | 컬럼ID | 컬럼명 | 타입 | pk | nullable | 그룹코드 | 용어ID | 도메인 | 설명 |
 | :--- | :--- | :--- | :---: | :---: | :--- | :--- | :--- | :--- |
 | C001 | user_id | uuid | Y | N |  | T0001 | D0001 uuid | 회원 식별자(PK) |
-| C002 | email_addr | varchar(500) |  | Y |  | T0001 | D0010 text_500 | 이메일(UNIQUE) |
+| C002 | email_addr | varchar(500) |  | Y |  | T0014 | D0015 addr_v500 | 이메일(UNIQUE) |
 | C003 | user_nm | varchar(100) |  | Y |  | - | D0007 text_100 | 표시명 |
 | C004 | status_cd | varchar(10) |  | N | USER_STATUS | T0003 | D0006 cd_10 | 회원 상태 코드 |
 | C005 | reg_system_cd | varchar(10) |  | N |  | T0006 | D0006 cd_10 | 등록시스템 코드 |

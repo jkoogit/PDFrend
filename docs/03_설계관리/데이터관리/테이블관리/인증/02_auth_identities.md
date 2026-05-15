@@ -9,7 +9,7 @@
 | C002 | provider_cd | varchar(10) |  | N |  | - | D0006 cd_10 | 제공자 코드 |
 | C003 | provider_key_val | varchar(500) |  | N |  | - | D0021 val_v500 | 제공자 키값 |
 | C004 | channel_cd | varchar(10) |  | N |  | - | D0006 cd_10 | 인증 채널 코드 |
-| C005 | hpno | varchar(500) |  | Y |  | - | D0029 hpno_v11 | 휴대폰번호 |
+| C005 | hpno | varchar(11) |  | Y |  | - | D0029 hpno_v11 | 휴대폰번호 |
 | C006 | verify_yn | boolean |  | N |  | T0005 | D0012 yn | 검증 여부 |
 | C007 | verified_dtm | timestamp |  | Y |  | T0005 | D0013 dtm | 검증일시 |
 | C008 | reg_system_cd | varchar(10) |  | N |  | T0006 | D0006 cd_10 | 등록시스템 코드 |
